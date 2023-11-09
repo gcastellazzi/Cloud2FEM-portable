@@ -1,31 +1,77 @@
-# Cloud2FEM - FE mesh generator based on point clouds of existing/historical structures
-# Copyright (C) 2022  Giovanni Castellazzi, Nicolò Lo Presti, Antonio Maria D'Altri, Stefano de Miranda
+###############################################################################
+# This module contains the functions needed to plot in pyqtgraph and
+# to interact with the plotted.
 #
-# This file is part of Cloud2FEM.
+# Run this file as __main__ to see the mouse interaction examples.
+# Check the bottom of this module to choose which example you want to run.
 #
-# Cloud2FEM is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
-#
-# Cloud2FEM is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-# 
-# You should have received a copy of the GNU General Public License
-# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+# WORK IN PROGRESS!!!!
+###############################################################################
+# Possible improvements:
+# If pyqtgraph version >= 0.12.3, add PlotCurveItem.setSkipFiniteCheck(True) to gain performances
 
-
-
-
-
-#################################################################################
-# This module contains the functions needed to interact with the plotted entities
-#################################################################################
 import numpy as np
 import pyqtgraph as pg
 from shapely.geometry import LineString
+
+
+
+
+# ## Do not use, probably it is more convenient to use PlotCurveItems as I did
+# ## in the main file. This allows to add the items to a list to be able to
+# ## remove only certain items from the plot, instead of PlotItem.clear() everything
+
+# def plot_grid(PlotItem, xdim, ydim, xmin, xmax, ymin, ymax):
+#     """
+#     Plots a grid whose space between lines is given by xdim and ydim,
+#     the other quantities define the extension of the grid.
+#     An example of PlotItem is:
+#     a = GraphicsLayoutWidget (from pyqtgraph)
+#     PlotItem = a.addPlot()
+#     """
+#     xngrid = np.arange(xmin - xdim, xmax + 2 * xdim, xdim)
+#     yngrid = np.arange(ymin - ydim, ymax + 2 * ydim, ydim)
+#     penna = pg.mkPen(color=(220, 220, 220, 255), width=1.5)
+#     for x in xngrid:
+#         PlotItem.plot((x, x), (min(yngrid), max(yngrid)), pen=penna)
+#     for y in yngrid:
+#         PlotItem.plot((min(xngrid), max(xngrid)), (y, y), pen=penna)
+#     
+#
+# def plot_scatter(PlotItem, points, sz=5, clr=(0, 0, 0, 255)):
+#     """
+#     points : np.array([[x1, y1], [x2, y2], ..., [xn, yn]])
+#     sz     : size of the points
+#     clr    : color (r, g, b, alpha)
+#     Plot points on the PlotItem.
+#     """
+#     scatter2d = pg.ScatterPlotItem(pos=points, size=sz, brush=pg.mkBrush(clr))
+#     PlotItem.addItem(scatter2d)
+#
+# 
+# ## Do not use, probably it is more convenient to use PlotCurveItems as I did
+# ## in the main file. This allows to add the items to a list to be able to
+# ## remove only certain items from the plot, instead of .clear() everything
+#
+# def plot_polylines(PlotItem, polylines, wd=3, clr=(50, 50, 50, 255), rainbow=False, points=False):
+#     """
+#     wd         : width of the points
+#     clr        : color (r, g, b, alpha)
+#     polylines  : list [poly1, poly2,...., ]  
+#                   where polyn=np.array([[x1, y1], [x2, y2], ...,[xn, yn]])
+#     Plot list of polylines on the PlotItem
+#     """
+#     for poly in polylines:
+#         if rainbow == False:
+#             PlotItem.plot(poly[:, : 2], pen=pg.mkPen(color=clr, width=wd))
+#         elif rainbow == True:
+#             colr = np.random.randint(50, 255)
+#             colg = np.random.randint(50, 255)
+#             colb = np.random.randint(50, 255)
+#             PlotItem.plot(poly[:, : 2], pen=pg.mkPen(color=(colr, colg, colb, 255), width=wd))
+#         if points == True:
+#             pts = pg.ScatterPlotItem(pos=poly[:, : 2], size=9, brush=pg.mkBrush(255, 0, 0, 255), symbol='s')
+#             PlotItem.addItem(pts)
 
 
 
@@ -1140,5 +1186,422 @@ class OffsetPolyline:
         self.PlotItem.scene().sigMouseMoved.disconnect(self.__getPolyline)
         self.PlotItem.sigRangeChanged.disconnect(self.__refresh_clickable_area)
         self.PlotItem.scene().sigMouseClicked.disconnect(self.__offPolyline)
+
+
+
+
+
+
+
+
+
+
+
+##############################################################################
+##############################################################################
+##################################################################### EXAMPLES
+##############################################################################    
+##############################################################################
+if __name__ == "__main__":
+    # Choose which mouse interaction example you want to see!
+    # 1:  Remove points with a click or with a rectangular selection
+    # 2:  Remove points selected with a rectangular shape
+    # 3:  Move a point: click1 start dragging, click2 stop dragging
+    # 4:  Add a point (vertex) in a polyline
+    # 5:  Remove a polyline by clicking on it
+    # 6:  Draw a new polyline
+    # 7:  Join two polylines by clicking on their endpoints  
+    # 8:  Select a polyline and do the offset of it
+    # 9:  ////////////////
+    # 10: ////////////////
+    # 11: All the examples together in a simple PyQt5 gui app
+    example = 11
+    
+    # Define some test data
+    points = np.array([[0, 0], [0, 1], [0, 2], [1, 0], [1, 1], [1, 2], [2, 0], [2, 1], [2, 2]]).astype(dtype=np.float32, copy=False) * 10
+    polyline1 = np.array([[0, 0], [5, 1], [10, 5], [15, 3], [20, 10], [25, 7], [30, 7], [35, 15], [40, 9], [50, 0]]).astype(dtype=np.float32, copy=False)
+    polyline2 = polyline1 + 30
+    polyline3 = polyline2 + 20
+    
+    nn = 50
+    polyline4 = np.hstack((np.arange((nn)).reshape(nn, 1), np.arange((nn)).reshape(nn, 1)))
+    
+    
+    
+    if example <= 10:
+        from pyqtgraph.Qt import QtGui
+        app = QtGui.QApplication([])
+        view = pg.GraphicsLayoutWidget(show=True)
+        view.setBackground((50, 50, 50))
+        plot = view.addPlot()
+        plot.setAspectLocked(True)
+        
+        if example == 1:
+            instance1 = RemovePointsClick(points, plot, 15, verbose=True)
+            instance1.start()
+            
+            instance2 = RemovePointsClick(polyline1, plot, 15, pclr=(0,0,90,255), verbose=True)
+            instance2.start()
+                
+        elif example == 2:
+            instance1 = RemovePointsRect(points, plot, 15, addline=True, verbose=True)
+            instance1.start()
+            
+            instance2 = RemovePointsRect(polyline2, plot, 15, pclr=(0,0,90,255), addline=True, verbose=True)
+            instance2.start()
+            
+            instance3 = RemovePointsRect(polyline3, plot, 15, pclr=(0,100,90,255), verbose=True)
+            instance3.start()
+            
+        elif example == 3:
+            instance1 = MovePoint(points, plot, 15, pclr=(150,0,150,255), verbose=True, addline=True)
+            instance1.start()
+            
+            instance2 = MovePoint(polyline2, plot, 15, verbose=True)
+            instance2.start()
+            
+            instance3 = MovePoint(polyline3, plot, 15, lclr=(0,200,10,255), pclr=(200,200,0,255), verbose=True, addline=True)
+            instance3.start()
+            
+        elif example == 4:
+            instance1 = AddPointOnLine(points, plot, 15, verbose=True)
+            instance1.start()
+            
+            instance2 = AddPointOnLine(polyline3, plot, 15, lclr=(100,50,10,255), pclr=(0,200,100,255), hlclr=(0, 150, 150, 255), verbose=True)
+            instance2.start()
+    
+        elif example == 5:
+            instance1 = RemovePolyline([points, polyline1, polyline2, polyline3], plot, 15, verbose=True)
+            instance1.start()
+            
+            # instance2 = RemovePolyline([polyline3], plot, 15, lclr=(100,50,10,255), pclr=(0,200,100,255), hlclr=(0, 150, 150, 255), verbose=True)
+            # instance2.start()
+    
+        elif example == 6:
+            instance1 = DrawPolyline([points, polyline2, polyline3], plot, 15, verbose=True)
+            instance1.start()
+            
+        elif example == 7:
+            instance1 = JoinPolylines([points, polyline2, polyline3], plot, 15, verbose=True)
+            instance1.start()
+        
+        elif example == 8:
+            instance1 = OffsetPolyline([points], plot, 15, 1, verbose=True)
+            instance1.start()
+            
+            
+        elif example == 9:
+            pass
+        elif example == 10:
+            pass
+    
+        QtGui.QApplication.instance().exec_()
+    
+    
+
+    else:
+        from PyQt5 import QtWidgets  #, QtCore
+        from PyQt5.QtWidgets import QApplication, QMainWindow #, QFileDialog, QMessageBox, QDialog
+        from PyQt5.QtCore import Qt
+        import pyqtgraph as pg
+        from pyqtgraph import GraphicsLayoutWidget
+        import sys
+        
+        
+        
+        class Window(QMainWindow):
+            def __init__(self):
+                super(Window, self).__init__()
+                # Setup the QMainWindow
+                self.setWindowTitle('All the tools in action!!')
+                self.resize(700, 600)
+                # Setup the central widget
+                self.centralwidget = QtWidgets.QWidget(self)
+                self.setCentralWidget(self.centralwidget)
+                self.centralwidget.setStyleSheet("background-color: rgb(150, 150, 150);")
+                # Add the vertical layout
+                self.vlayout = QtWidgets.QVBoxLayout(self.centralwidget)
+                # Create and nest two horizontal layouts in the vertical layout
+                self.hlayout1 = QtWidgets.QHBoxLayout()
+                self.vlayout.addLayout(self.hlayout1)
+                self.hlayout2 = QtWidgets.QHBoxLayout()
+                self.vlayout.addLayout(self.hlayout2)
+                # Set the layout of the central widget
+                self.centralwidget.setLayout(self.vlayout)
+                # Create items to be added in the layouts
+                # They could be also added directly using e.g. self.vlayout.addWidget(self.myNewWidget)
+                self.glwidget = GraphicsLayoutWidget()  # This is an item from pyqtgraph
+                self.glwidget.setBackground((54, 54, 54))
+                self.glwidget.setEnabled(True)  # Make sure it is enabled (maybe useless line of code)
+                self.btn1 = QtWidgets.QPushButton('Start editing')
+                self.btn2 = QtWidgets.QPushButton('Save changes')
+                self.btn3 = QtWidgets.QPushButton('Discard changes')
+                self.inputText = QtWidgets.QLineEdit('-1.0')
+                self.btn1.setEnabled(False)
+                self.btn2.setEnabled(False)
+                self.btn3.setEnabled(False)
+                self.inputText.setEnabled(False)
+                self.radio1 = QtWidgets.QRadioButton('Points example')
+                self.radio2 = QtWidgets.QRadioButton('Polylines example')
+                self.radio2.setChecked(True)
+                self.radio1.setEnabled(False)
+                self.radio2.setEnabled(False)
+                # Add items to the layouts
+                self.hlayout1.addWidget(self.btn1)
+                self.hlayout1.addWidget(self.btn2)
+                self.hlayout1.addWidget(self.btn3)
+                self.hlayout1.addWidget(self.inputText)
+                self.hlayout1.addWidget(self.radio1)
+                self.hlayout1.addWidget(self.radio2)
+                self.hlayout1.addStretch(1)
+                self.hlayout2.addWidget(self.glwidget)
+                # Add a PlotItem to the pyqtgraph GraphicsLayoutWidget and set it up
+                self.plot2d = self.glwidget.addPlot()
+                self.plot2d.setAspectLocked(lock=True)
+                self.plot2d.setTitle('PRESS ENTER')
+                
+                # Generate some random initial points and polylines
+                self.npoints = 5000
+                self.points = np.hstack((np.random.random(self.npoints).reshape(self.npoints, 1)*20, np.random.random(self.npoints).reshape(self.npoints, 1)*20))
+                self.nverts = 40
+                self.polyline1 = np.hstack((np.arange(self.nverts).reshape(self.nverts, 1)*10, np.random.random(self.nverts).reshape(self.nverts, 1)*10))
+                self.polyline2 = self.polyline1 + 50
+                self.polyline3 = self.polyline2 + 70
+                self.polyline4 = np.hstack((np.arange(self.nverts).reshape(self.nverts, 1)*10, np.sin(np.arange(self.nverts).reshape(self.nverts, 1))*20 + 200))
+                self.polyline5 = np.hstack((self.polyline4[:, 1].reshape(self.polyline4.shape[0], 1), self.polyline4[:, 0].reshape(self.polyline4.shape[0], 1))) - 200
+                self.polylines = [self.polyline1, self.polyline2, self.polyline3, self.polyline4, self.polyline5]
+                
+                # Set some default variables
+                self.initialized = False
+                self.editing = False
+                self.polylinesTool = 'draw'
+                self.pointsTool = 'remove'
+                
+                # Connect signals
+                self.btn1.clicked.connect(self.editMode)
+                self.radio1.clicked.connect(self.plotStaticData)
+                self.radio2.clicked.connect(self.plotStaticData)
+                self.btn2.clicked.connect(self.save_changes)
+                self.btn3.clicked.connect(self.discard_changes)
+                self.inputText.textEdited.connect(self.updateOffDistance)
+            
+            def updateOffDistance(self):
+                """ This method is needed to update the offset distance when
+                a new value is set in the lineEdit widget.
+                """
+                try:
+                    self.editInstance[0].offset = float(self.inputText.text())
+                except ValueError:
+                    pass
+                
+                
+            
+            def keyPressEvent(self, event):
+                ''' This method already exists in the inherited QMainWindow class.
+                    Here it is overwritten to adapt key events to this app.
+                '''
+                if self.editing:
+                    self.inputText.setEnabled(False)
+                    self.plot2d.clear()    
+                    if self.radio2.isChecked():
+                        self.tempPolylines = []
+                        for edI in self.editInstance:
+                            edI.stop()
+                            if self.polylinesTool in ['addponline', 'movepoint']:
+                                self.tempPolylines.append(edI.pll)
+                            elif self.polylinesTool in ['removepoint']:
+                                if edI.pts_b.shape[0] != 0:  # Remove empty array when a polyline is completely deleted removing its points
+                                    self.tempPolylines.append(edI.pts_b)
+                            else:
+                                self.tempPolylines = edI.plls
+                        if event.key() == Qt.Key_D:
+                            self.plot2d.setTitle('<strong><u><big><mark>D draw</strong>, J join, R remove polyline, A add point, M move point, P remove points, O offset')
+                            self.polylinesTool = 'draw'
+                            self.editInstance = [DrawPolyline(self.tempPolylines, self.plot2d, 10)]
+                        elif event.key() == Qt.Key_J:
+                            self.plot2d.setTitle('D draw, <strong><u><big><mark>J join</strong>, R remove polyline, A add point, M move point, P remove points, O offset')
+                            self.polylinesTool = 'join'
+                            self.editInstance = [JoinPolylines(self.tempPolylines, self.plot2d, 10)]
+                        elif event.key() == Qt.Key_R:
+                            self.plot2d.setTitle('D draw, J join, <strong><u><big><mark>R remove polyline</strong>, A add point, M move point, P remove points, O offset')
+                            self.polylinesTool = 'rempoly'
+                            self.editInstance = [RemovePolyline(self.tempPolylines, self.plot2d, 10)]
+                        elif event.key() == Qt.Key_A:
+                            self.plot2d.setTitle('D draw, J join, R remove polyline, <strong><u><big><mark>A add point</strong>, M move point, P remove points, O offset')
+                            self.polylinesTool = 'addponline'
+                            self.editInstance = [AddPointOnLine(pll, self.plot2d, 10) for pll in self.tempPolylines]
+                        elif event.key() == Qt.Key_M:
+                            self.plot2d.setTitle('D draw, J join, R remove polyline, A add point, <strong><u><big><mark>M move point</strong>, P remove points, O offset')
+                            self.polylinesTool = 'movepoint'
+                            self.editInstance = [MovePoint(pll, self.plot2d, 10, addline=True) for pll in self.tempPolylines]
+                        elif event.key() == Qt.Key_P:
+                            self.plot2d.setTitle('D draw, J join, R remove polyline, A add point, M move point, <strong><u><big><mark>P remove points</strong>, O offset')
+                            self.polylinesTool = 'removepoint'
+                            self.editInstance = [RemovePointsRect(pll,self.plot2d, 10, addline=True) for pll in self.tempPolylines]
+                        elif event.key() == Qt.Key_O:
+                            self.plot2d.setTitle('D draw, J join, R remove polyline, A add point, M move point, P remove points, <strong><u><big><mark>O offset</strong>')
+                            self.polylinesTool = 'offset'
+                            self.inputText.setEnabled(True)
+                            self.editInstance = [OffsetPolyline(self.tempPolylines,self.plot2d, 10, float(self.inputText.text()))]
+                    elif self.radio1.isChecked():
+                        self.plot2d.clear()
+                        self.tempPoints = self.editInstance[0].pts_b
+                        if event.key() == Qt.Key_R:
+                            self.plot2d.setTitle('<strong><u><big><mark>R remove points (click)</strong>, P remove points (rect selection)')
+                            self.pointsTool = 'remove'
+                            self.editInstance = [RemovePointsClick(self.tempPoints, self.plot2d, 10)]
+                        elif event.key() == Qt.Key_P:
+                            self.plot2d.setTitle('R remove points (click), <strong><u><big><mark>P remove points (rect selection)</strong>')
+                            self.pointsTool = 'removerect'
+                            self.editInstance = [RemovePointsRect(self.tempPoints, self.plot2d, 10)]
+              
+                    for edI in self.editInstance:
+                        edI.start()
+                
+                elif event.key() == Qt.Key_Return and self.initialized == False:
+                    self.plotStaticData()
+                    self.plot2d.setTitle('')
+                    self.initialized = True
+                    self.btn1.setEnabled(True)
+                    self.radio1.setEnabled(True)
+                    self.radio2.setEnabled(True)
+                
+
+            def save_changes(self):
+                """ This method exits the edit mode and updates data for 
+                self.points or self.polylines data
+                """
+                self.plot2d.setTitle('')
+                if self.radio2.isChecked():
+                    self.tempPolylines = []
+                    for edI in self.editInstance:
+                        edI.stop()
+                        if self.polylinesTool in ['addponline', 'movepoint']:
+                            self.tempPolylines.append(edI.pll)
+                            print(len(self.tempPolylines))
+                        elif self.polylinesTool in ['removepoint']:
+                            self.tempPolylines.append(edI.pts_b)
+                        else:
+                            self.tempPolylines = edI.plls      
+                    self.polylines = self.tempPolylines
+                    self.polylinesTool = 'draw'
+                    self.plotStaticData()
+                    self.editing = False
+                    self.btn1.setEnabled(True)
+                    self.btn2.setEnabled(False)
+                    self.btn3.setEnabled(False)
+                    self.radio1.setEnabled(True)
+                    self.radio2.setEnabled(True)
+                    self.inputText.setEnabled(False)
+
+                elif self.radio1.isChecked():
+                    for edI in self.editInstance:
+                        edI.stop()
+                    self.points = self.editInstance[0].pts_b
+                    self.pointsTool = 'remove'
+                    self.plotStaticData()
+                    self.editing = False
+                    self.btn1.setEnabled(True)
+                    self.btn2.setEnabled(False)
+                    self.btn3.setEnabled(False)
+                    self.radio1.setEnabled(True)
+                    self.radio2.setEnabled(True)
+                    
+
+            def discard_changes(self):
+                """ This method exits the edit mode without
+                altering the original self.points or self.polylines data.
+                """
+                self.plot2d.setTitle('')
+                if self.radio2.isChecked():
+                    for edI in self.editInstance:
+                        edI.stop()
+                    self.polylinesTool = 'draw'
+                    self.plotStaticData()
+                    self.editing = False
+                    self.btn1.setEnabled(True)
+                    self.btn2.setEnabled(False)
+                    self.btn3.setEnabled(False)
+                    self.radio1.setEnabled(True)
+                    self.radio2.setEnabled(True)
+                    self.inputText.setEnabled(False)
+ 
+                elif self.radio1.isChecked():
+                    for edI in self.editInstance:
+                        edI.stop()
+                    self.pointsTool = 'remove'
+                    self.plotStaticData()
+                    self.editing = False
+                    self.btn1.setEnabled(True)
+                    self.btn2.setEnabled(False)
+                    self.btn3.setEnabled(False)
+                    self.radio1.setEnabled(True)
+                    self.radio2.setEnabled(True)
+                    
+
+            def editMode(self):
+                """ This method initializes the edit mode with a default tool
+                """
+                self.plot2d.clear()
+                self.editing = True
+                self.btn1.setEnabled(False)
+                self.btn2.setEnabled(True)
+                self.btn3.setEnabled(True)
+                self.radio1.setEnabled(False)
+                self.radio2.setEnabled(False)
+                if self.radio2.isChecked():
+                    self.plot2d.setTitle('<strong><u><big><mark>D draw</strong>, J join, R remove polyline, A add point, M move point, P remove points, O offset')
+                    self.tempPolylines = self.polylines.copy()
+                    self.polylinesTool = 'draw'
+                    self.editInstance = [DrawPolyline(self.tempPolylines, self.plot2d, 10)]
+                    self.editInstance[0].start()
+                elif self.radio1.isChecked():
+                    self.plot2d.setTitle('R remove points (click), <strong><u><big><mark>P remove points (rect selection)</strong>')
+                    self.tempPoints = self.points.copy()
+                    self.pointsTool = 'removerect'
+                    self.editInstance = [RemovePointsRect(self.tempPoints, self.plot2d, 10)]
+                    self.editInstance[0].start()
+                    
+  
+            def plotStaticData(self):
+                """ This method plots items when we are not in the editing mode
+                """
+                self.plot2d.clear()
+                self.plot2d.vb.enableAutoRange()
+                if self.radio2.isChecked():
+                    self.CurveItems = {}
+                    for i in range(len(self.polylines)):
+                        CurveItem = pg.PlotCurveItem(
+                        pen=pg.mkPen(color=(200, 200, 0, 255), width=3))
+                        CurveItem.setData(self.polylines[i][:, 0], self.polylines[i][:, 1])
+                        self.plot2d.addItem(CurveItem)
+                        self.CurveItems[i] = CurveItem
+                    # Plot vertices
+                    polylines_linked = self.polylines[0]
+                    for pll in self.polylines[1:]:
+                        polylines_linked = np.vstack((polylines_linked, pll))
+                    # Plot points at the vertices of the polylines
+                    self.ScatterItem = pg.ScatterPlotItem(pxMode=True, size=5, brush=pg.mkBrush(100, 50, 0, 255))
+                    self.ScatterItem.setData(polylines_linked[:, 0], polylines_linked[:, 1])
+                    self.plot2d.addItem(self.ScatterItem)
+                        
+                elif self.radio1.isChecked():
+                    self.ScatterItem = pg.ScatterPlotItem(pxMode=True, size=5, brush=pg.mkBrush(200, 200, 0, 255))
+                    self.ScatterItem.setData(self.points[:, 0], self.points[:, 1])
+                    self.plot2d.addItem(self.ScatterItem)
+
+
+        app = QApplication(sys.argv)
+        win = Window()
+        win.show()
+        sys.exit(app.exec_())
+
+
+
+
+
+
+
+
 
 
