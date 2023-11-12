@@ -1,3 +1,12 @@
+# Usage
+This version of Cloud2FEM is based on a portable python.exe version (compatible with Windows OS only).
+To launch it, open a cmd.exe window and then type the following commands:
+
+`cd Cloud2FEMportable`
+`python main_Cloud2FEM.py`
+
+You should see the GUI appear in a few seconds.
+
 # Cloud2FEM
 A finite element mesh generator based on point clouds of existing/histociral structures. 
 
